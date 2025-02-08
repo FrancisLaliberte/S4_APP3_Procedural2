@@ -8,7 +8,7 @@ void init_timer3();
 void init_leds();
 void init_adc();
 
-
+// Timer2 set at 48 kHz
 void init_timer2(){
     // Close Timer2
     T2CONbits.ON = 0;
@@ -38,19 +38,15 @@ void init_timer2(){
     // Current interrupt flag status is cleared
     IFS0bits.T2IF = 0;  
     
-    // Enable flag 
-    IEC0bits.T2IE = 1;
-    
-    // Primary and secondary priority group
-    IPC2bits.T2IP = 2;
-    IPC2bits.T2IS = 0;
-    
-
+    // Disable flag 
+    IEC0bits.T2IE = 0;
     
     // Start Timer1. Don't want to start timer before associated interrupt
     // is configured
     T2CONbits.ON = 1;
 }
+
+// Timer3 set at 4 kHz
 void init_timer3(){
       // Close Timer3
     T3CONbits.ON = 0;
@@ -78,18 +74,15 @@ void init_timer3(){
     
     // Current interrupt flag status is cleared
     IFS0bits.T3IF = 0;  
-    
-    // Primary and secondary priority group
-    IPC3bits.T3IP = 2;
-    IPC3bits.T3IS = 0;
-    
-    // Enable flag 
-    IEC0bits.T3IE = 1;
+      
+    // Disable flag 
+    IEC0bits.T3IE = 0;
     
     // Start Timer1. Don't want to start timer before associated interrupt
     // is configured
     T3CONbits.ON = 1;
 }
+
 void init_RGB(){
     // RD3 as digital output initialized at LOW
     TRISDbits.TRISD3 = 0;
@@ -115,14 +108,19 @@ void init_RGB(){
     OC4CONbits.OCM = 0b110;
     
     // HIGH Logic level until Timer3 reaches OC4R value
-    OC4R = 4;
-    OC4RS = 4;
+    
+    // Immediately changes PWM cycle
+    OC4R = 0;
+    
+    // Only changes Duty cycle of PWM at the end of a PWM cycle
+    OC4RS = 0;
 
     // Turn on OC4
     OC4CONbits.ON = 1;   
 }
+
 void init_adc(){
-        // Configure Analog pin
+    // Configure Analog pin
     
     // Configure AIC as input
     TRISBbits.TRISB2 = 1;
@@ -198,11 +196,15 @@ int main(){
     macro_enable_interrupts();
     
     while(1);
-    
 }
 
-// Interrupt routine macros defined in attribs.h
-void __ISR(_TIMER_3_VECTOR, IPL2AUTO)Timer3_ISR(void){
-    PORTAINV = 1;
-    IFS0bits.T3IF = 0;  
+
+
+void __ISR(_ADC_VECTOR, IPL5AUTO)ADC_ISR(void){
+    
+    // Need to typecast floating result of division to uint32_t
+    uint32_t placeholder = (ADC1BUF0 * 999 / 1023);
+    OC4RS = placeholder;
+    OC4R = placeholder;    
+    IFS0bits.AD1IF = 0;
 }
