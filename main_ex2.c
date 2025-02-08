@@ -204,7 +204,6 @@ void __ISR(_ADC_VECTOR, IPL5AUTO)ADC_ISR(void){
     
     // Need to typecast floating result of division to uint32_t
     uint32_t placeholder = (ADC1BUF0 * 999 / 1023);
-    OC4RS = placeholder;
-    OC4R = placeholder;    
+    OC4RS = placeholder;  
     IFS0bits.AD1IF = 0;
 }
